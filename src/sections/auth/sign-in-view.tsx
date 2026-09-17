@@ -58,7 +58,7 @@ export function SignInView() {
           return;
         }
 
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       } catch (err: any) {
         setError(readError(err, 'Sign in failed. Please try again.'));
       } finally {
@@ -76,7 +76,7 @@ export function SignInView() {
 
       try {
         await completeTwoFactor(challengeToken, code.trim());
-        navigate('/', { replace: true });
+        navigate('/dashboard', { replace: true });
       } catch (err: any) {
         // The API hands back a fresh challenge so the user can retype the code.
         const nextChallenge = err?.response?.data?.errors?.challenge_token;

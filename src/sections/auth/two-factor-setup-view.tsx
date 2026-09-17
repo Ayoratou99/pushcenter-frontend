@@ -186,7 +186,7 @@ export function TwoFactorSetupView() {
           <Button
             variant="contained"
             sx={{ flexGrow: 1 }}
-            onClick={() => navigate('/', { replace: true })}
+            onClick={() => navigate('/dashboard', { replace: true })}
           >
             Continue to the dashboard
           </Button>

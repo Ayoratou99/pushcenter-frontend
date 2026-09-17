@@ -14,7 +14,7 @@ export type NavItem = {
 export const navData: NavItem[] = [
   {
     title: 'Dashboard',
-    path: '/',
+    path: '/dashboard',
     icon: <Iconify icon="solar:graph-up-bold" width={24} />,
   },
   {

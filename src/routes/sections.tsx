@@ -1,8 +1,8 @@
 import type { RouteObject } from 'react-router';
 
 import { lazy, Suspense } from 'react';
-import { Outlet } from 'react-router-dom';
 import { varAlpha } from 'minimal-shared/utils';
+import { Outlet, Navigate } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgress';
@@ -10,10 +10,12 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
+import { useAuthContext } from 'src/auth/auth-context';
 import { AuthGuard, RoleGuard, GuestGuard } from 'src/auth/auth-guard';
 
 // ----------------------------------------------------------------------
 
+export const LandingPage = lazy(() => import('src/pages/landing'));
 export const DashboardPage = lazy(() => import('src/pages/dashboard'));
 export const MessagesPage = lazy(() => import('src/pages/messages'));
 export const TemplatesPage = lazy(() => import('src/pages/templates'));
@@ -51,7 +53,33 @@ const renderFallback = () => (
   </Box>
 );
 
+/**
+ * `/` stays a single entry point: visitors get the landing page, signed-in users
+ * are sent to the dashboard. Existing links to `/` therefore keep working.
+ */
+function RootRoute() {
+  const { loading, isAuthenticated, needsTwoFactorSetup } = useAuthContext();
+
+  if (loading) {
+    return renderFallback();
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Suspense fallback={renderFallback()}>
+        <LandingPage />
+      </Suspense>
+    );
+  }
+
+  return <Navigate to={needsTwoFactorSetup ? '/two-factor-setup' : '/dashboard'} replace />;
+}
+
 export const routesSection: RouteObject[] = [
+  {
+    index: true,
+    element: <RootRoute />,
+  },
   /* -------------------------------- Public ------------------------------- */
   {
     path: 'sign-in',
@@ -104,7 +132,7 @@ export const routesSection: RouteObject[] = [
       </AuthGuard>
     ),
     children: [
-      { index: true, element: <DashboardPage /> },
+      { path: 'dashboard', element: <DashboardPage /> },
       { path: 'messages', element: <MessagesPage /> },
       { path: 'template-create', element: <TemplateCreatePage /> },
       { path: 'templates/:type/:id/view', element: <TemplateViewPage /> },

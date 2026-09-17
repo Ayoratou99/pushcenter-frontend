@@ -58,7 +58,7 @@ export function GuestGuard({ children }: { children: ReactNode }) {
   }
 
   if (isAuthenticated) {
-    return <Navigate to={needsTwoFactorSetup ? '/two-factor-setup' : '/'} replace />;
+    return <Navigate to={needsTwoFactorSetup ? '/two-factor-setup' : '/dashboard'} replace />;
   }
 
   return <>{children}</>;
@@ -75,7 +75,7 @@ export function RoleGuard({ children, roles }: { children: ReactNode; roles: str
   }
 
   if (!user || !roles.includes(user.role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
