@@ -1,11 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { Outlet, RouterProvider, createBrowserRouter } from 'react-router';
+import { Outlet, RouterProvider, createBrowserRouter } from 'react-router-dom';
 
 import App from './app';
 import { routesSection } from './routes/sections';
+import { AuthProvider } from './auth/auth-context';
 import { ErrorBoundary } from './routes/components';
-import KeycloakProvider from './contexts/KeycloakProvider';
 
 // ----------------------------------------------------------------------
 
@@ -23,10 +23,10 @@ const router = createBrowserRouter([
 
 const root = createRoot(document.getElementById('root')!);
 
-// Temporarily disable StrictMode to avoid Keycloak double initialization error
-// StrictMode in development mounts components twice which causes "instance can only be initialized once"
 root.render(
-  <KeycloakProvider>
-    <RouterProvider router={router} />
-  </KeycloakProvider>
+  <StrictMode>
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
+  </StrictMode>
 );

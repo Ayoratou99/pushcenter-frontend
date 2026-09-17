@@ -7,9 +7,11 @@ export type NavItem = {
   path: string;
   icon: React.ReactNode;
   info?: React.ReactNode;
+  /** Roles allowed to see the entry; undefined means everyone. */
+  roles?: string[];
 };
 
-export const navData = [
+export const navData: NavItem[] = [
   {
     title: 'Dashboard',
     path: '/',
@@ -26,8 +28,14 @@ export const navData = [
     icon: <Iconify icon="solar:document-text-bold" width={24} />,
   },
   {
-    title: 'Businesses',
+    title: 'Applications',
     path: '/businesses',
     icon: <Iconify icon="solar:shop-bold" width={24} />,
+  },
+  {
+    title: 'Users',
+    path: '/users',
+    icon: <Iconify icon="solar:users-group-rounded-bold" width={24} />,
+    roles: ['admin'],
   },
 ];

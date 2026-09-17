@@ -1,9 +1,9 @@
 import type { EditorRef } from 'react-email-editor';
 
-import { CKEditor } from '@ckeditor/ckeditor5-react';
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 import EmailEditor from 'react-email-editor';
 import { useRef, useState, useEffect } from 'react';
+import { CKEditor } from '@ckeditor/ckeditor5-react';
+import ClassicEditor from '@ckeditor/ckeditor5-build-classic';
 
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
@@ -12,25 +12,28 @@ import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
+import Dialog from '@mui/material/Dialog';
 import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
-import FormControl from '@mui/material/FormControl';
-import CircularProgress from '@mui/material/CircularProgress';
-import ToggleButton from '@mui/material/ToggleButton';
-import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import Typography from '@mui/material/Typography';
-import Dialog from '@mui/material/Dialog';
+import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
+import ToggleButton from '@mui/material/ToggleButton';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
-import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
+
+import { type Business, businessService, emailTemplateService } from 'src/services';
 
 import { Iconify } from 'src/components/iconify';
 
-import { emailTemplateService, businessService, type Business } from 'src/services';
-
 // ----------------------------------------------------------------------
+
+/** A blank Unlayer design, used to reset the editor after a save. */
+const EMPTY_DESIGN = { counters: {}, body: { rows: [] } } as any;
 
 export function EmailTemplateEditor() {
   const emailEditorRef = useRef<EditorRef>(null);
@@ -185,7 +188,7 @@ export function EmailTemplateEditor() {
       setNewVariableName('');
       // Reset Unlayer editor if it exists
       if (emailEditorRef.current?.editor) {
-        emailEditorRef.current.editor.loadDesign({});
+        emailEditorRef.current.editor.loadDesign(EMPTY_DESIGN);
       }
       setTimeout(() => setSuccess(false), 5000);
     } catch (err: any) {
@@ -236,7 +239,7 @@ export function EmailTemplateEditor() {
       setNewVariableName('');
       // Reset Unlayer editor if it exists
       if (emailEditorRef.current?.editor) {
-        emailEditorRef.current.editor.loadDesign({});
+        emailEditorRef.current.editor.loadDesign(EMPTY_DESIGN);
       }
       setTimeout(() => setSuccess(false), 5000);
     } catch (err: any) {
@@ -360,7 +363,7 @@ export function EmailTemplateEditor() {
                 </Box>
               ) : (
                 <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                  No variables added. Click "Add Variable" to add dynamic content placeholders.
+                  No variables added. Click &quot;Add Variable&quot; to add dynamic content placeholders.
                 </Typography>
               )}
               <Typography variant="caption" color="text.secondary">

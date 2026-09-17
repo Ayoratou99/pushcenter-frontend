@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
@@ -8,14 +9,12 @@ import Stack from '@mui/material/Stack';
 import Button from '@mui/material/Button';
 import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
-import CircularProgress from '@mui/material/CircularProgress';
 import { List, ListItem, ListItemText } from '@mui/material';
-
-import axios from 'axios';
-
-import { Iconify } from 'src/components/iconify';
+import CircularProgress from '@mui/material/CircularProgress';
 
 import { ENV_CONFIG } from 'src/config/env.config';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 

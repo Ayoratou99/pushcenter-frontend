@@ -13,15 +13,21 @@ import type { IconifyName } from './register-icons';
 
 // ----------------------------------------------------------------------
 
+/**
+ * Registered icon names keep autocomplete, but any Iconify name is accepted:
+ * unregistered ones are fetched online (and warned about) at runtime.
+ */
+export type IconifyIconName = IconifyName | (string & {});
+
 export type IconifyProps = React.ComponentProps<typeof IconRoot> &
   Omit<IconProps, 'icon'> & {
-    icon: IconifyName;
+    icon: IconifyIconName;
   };
 
 export function Iconify({ className, icon, width = 20, height, sx, ...other }: IconifyProps) {
   const id = useId();
 
-  if (!allIconNames.includes(icon)) {
+  if (!allIconNames.includes(icon as IconifyName)) {
     console.warn(
       [
         `Icon "${icon}" is currently loaded online, which may cause flickering effects.`,

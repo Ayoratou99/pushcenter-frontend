@@ -17,6 +17,13 @@ export interface Business {
   locale: string;
   app_id?: string;
   app_secret?: string;
+  country_code?: string;
+  address?: string;
+  city?: string;
+  state_province?: string;
+  postal_code?: string;
+  country?: string;
+  verification_status?: 'pending' | 'verified' | 'rejected';
   created_at: string;
   updated_at: string;
 }
@@ -101,6 +108,8 @@ export interface Template {
   id: number;
   business_id: number;
   name: string;
+  /** Stable slug generated from the name, used to reference the template by API. */
+  template_identifier?: string;
   description?: string;
   type: 'email' | 'sms' | 'whatsapp';
   category: 'marketing' | 'transactional' | 'notification';
@@ -108,7 +117,10 @@ export interface Template {
   is_active: boolean;
   usage_count: number;
   last_used_at?: string;
+  variables?: string[];
+  sample_data?: Record<string, any>;
   metadata?: Record<string, any>;
+  business?: { id: number; name: string };
   created_at: string;
   updated_at: string;
 }

@@ -10,6 +10,8 @@ import LinearProgress, { linearProgressClasses } from '@mui/material/LinearProgr
 import { AuthLayout } from 'src/layouts/auth';
 import { DashboardLayout } from 'src/layouts/dashboard';
 
+import { AuthGuard, RoleGuard, GuestGuard } from 'src/auth/auth-guard';
+
 // ----------------------------------------------------------------------
 
 export const DashboardPage = lazy(() => import('src/pages/dashboard'));
@@ -20,10 +22,13 @@ export const TemplateViewPage = lazy(() => import('src/pages/template-view'));
 export const TemplateEditPage = lazy(() => import('src/pages/template-edit'));
 export const BusinessesPage = lazy(() => import('src/pages/businesses'));
 export const BusinessDetailPage = lazy(() => import('src/pages/business-detail'));
+export const UsersPage = lazy(() => import('src/pages/users'));
+export const ProfilePage = lazy(() => import('src/pages/profile'));
+export const SignInPage = lazy(() => import('src/pages/sign-in'));
+export const TwoFactorSetupPage = lazy(() => import('src/pages/two-factor-setup'));
 export const FacebookCallbackPage = lazy(() => import('src/pages/facebook-callback'));
 export const ConnectFacebookPage = lazy(() => import('src/pages/connect-facebook'));
 export const ConnectFacebookCallbackPage = lazy(() => import('src/pages/connect-facebook-callback'));
-export const TestSimplePage = lazy(() => import('src/pages/test-simple'));
 export const Page404 = lazy(() => import('src/pages/page-not-found'));
 
 const renderFallback = () => (
@@ -47,10 +52,30 @@ const renderFallback = () => (
 );
 
 export const routesSection: RouteObject[] = [
-  // Test pages (no layout required)
+  /* -------------------------------- Public ------------------------------- */
   {
-    path: 'test-simple',
-    element: <TestSimplePage />,
+    path: 'sign-in',
+    element: (
+      <GuestGuard>
+        <AuthLayout>
+          <Suspense fallback={renderFallback()}>
+            <SignInPage />
+          </Suspense>
+        </AuthLayout>
+      </GuestGuard>
+    ),
+  },
+  {
+    // Reached right after a first sign-in: the user is authenticated but has
+    // to finish the mandatory Google Authenticator enrolment.
+    path: 'two-factor-setup',
+    element: (
+      <AuthLayout cssVars={{ '--layout-auth-content-width': '680px' }}>
+        <Suspense fallback={renderFallback()}>
+          <TwoFactorSetupPage />
+        </Suspense>
+      </AuthLayout>
+    ),
   },
   // Facebook OAuth callback (no layout required)
   {
@@ -66,13 +91,17 @@ export const routesSection: RouteObject[] = [
     path: 'connect-facebook-callback/:businessId',
     element: <ConnectFacebookCallbackPage />,
   },
+
+  /* ------------------------------ Dashboard ------------------------------ */
   {
     element: (
-      <DashboardLayout>
-        <Suspense fallback={renderFallback()}>
-          <Outlet />
-        </Suspense>
-      </DashboardLayout>
+      <AuthGuard>
+        <DashboardLayout>
+          <Suspense fallback={renderFallback()}>
+            <Outlet />
+          </Suspense>
+        </DashboardLayout>
+      </AuthGuard>
     ),
     children: [
       { index: true, element: <DashboardPage /> },
@@ -83,6 +112,15 @@ export const routesSection: RouteObject[] = [
       { path: 'templates', element: <TemplatesPage /> },
       { path: 'businesses', element: <BusinessesPage /> },
       { path: 'business/:id', element: <BusinessDetailPage /> },
+      { path: 'profile', element: <ProfilePage /> },
+      {
+        path: 'users',
+        element: (
+          <RoleGuard roles={['admin']}>
+            <UsersPage />
+          </RoleGuard>
+        ),
+      },
     ],
   },
   {

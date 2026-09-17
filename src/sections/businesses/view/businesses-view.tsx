@@ -1,3 +1,5 @@
+import type { AppCredentials } from 'src/services/business.service';
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -5,22 +7,30 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import Chip from '@mui/material/Chip';
 import Table from '@mui/material/Table';
+import Alert from '@mui/material/Alert';
+import Stack from '@mui/material/Stack';
+import Paper from '@mui/material/Paper';
 import Button from '@mui/material/Button';
 import Select from '@mui/material/Select';
 import Dialog from '@mui/material/Dialog';
+import Tooltip from '@mui/material/Tooltip';
 import MenuItem from '@mui/material/MenuItem';
 import TableRow from '@mui/material/TableRow';
+import Snackbar from '@mui/material/Snackbar';
 import TextField from '@mui/material/TextField';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import Typography from '@mui/material/Typography';
 import InputLabel from '@mui/material/InputLabel';
+import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import TableContainer from '@mui/material/TableContainer';
+import InputAdornment from '@mui/material/InputAdornment';
+import TableSortLabel from '@mui/material/TableSortLabel';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
@@ -28,6 +38,19 @@ import { DashboardContent } from 'src/layouts/dashboard';
 import { type Business, businessService } from 'src/services';
 
 import { Iconify } from 'src/components/iconify';
+import { TableFilters } from 'src/components/table-filters';
+
+// ----------------------------------------------------------------------
+
+const EMPTY_FILTERS: Record<string, string> = {
+  search: '',
+  status: '',
+  verification_status: '',
+  city: '',
+  country: '',
+  created_from: '',
+  created_to: '',
+};
 
 // ----------------------------------------------------------------------
 
@@ -40,8 +63,16 @@ export function BusinessesView() {
   const [total, setTotal] = useState(0);
   
   // Filters
-  const [status, setStatus] = useState('');
-  const [search, setSearch] = useState('');
+  const [filters, setFilters] = useState<Record<string, string>>({ ...EMPTY_FILTERS });
+  const [sortBy, setSortBy] = useState('created_at');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  // Credentials shown once, right after an application is created
+  const [newCredentials, setNewCredentials] = useState<
+    (AppCredentials & { businessName: string }) | null
+  >(null);
+  const [secretVisible, setSecretVisible] = useState(false);
+  const [copied, setCopied] = useState('');
   
   // Create/Edit dialog
   const [openDialog, setOpenDialog] = useState(false);
@@ -174,19 +205,23 @@ export function BusinessesView() {
   useEffect(() => {
     loadBusinesses();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page, rowsPerPage, status, search]);
+  }, [page, rowsPerPage, filters, sortBy, sortDir]);
 
   const loadBusinesses = async () => {
     try {
       setLoading(true);
-      const params: any = {
+
+      const params: Record<string, any> = {
         page: page + 1,
         per_page: rowsPerPage,
+        sort_by: sortBy,
+        sort_dir: sortDir,
       };
-      
-      if (status) params.status = status;
-      if (search) params.search = search;
-      
+
+      Object.entries(filters).forEach(([key, value]) => {
+        if (value !== '') params[key] = value;
+      });
+
       const response = await businessService.getAll(params);
       setBusinesses(response.data.data);
       setTotal(response.data.total);
@@ -206,10 +241,30 @@ export function BusinessesView() {
     setPage(0);
   };
 
-  const handleClearFilters = () => {
-    setStatus('');
-    setSearch('');
+  const handleFilterChange = (name: string, value: string) => {
+    setFilters((previous) => ({ ...previous, [name]: value }));
     setPage(0);
+  };
+
+  const handleClearFilters = () => {
+    setFilters({ ...EMPTY_FILTERS });
+    setPage(0);
+  };
+
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortDir(sortDir === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortDir('asc');
+    }
+    setPage(0);
+  };
+
+  const handleCopy = (label: string, value: string) => {
+    navigator.clipboard?.writeText(value);
+    setCopied(label);
+    setTimeout(() => setCopied(''), 2000);
   };
 
   const handleOpenDialog = () => {
@@ -260,7 +315,16 @@ export function BusinessesView() {
       if (editingId) {
         await businessService.update(editingId, formData);
       } else {
-        await businessService.create(formData);
+        const response = await businessService.create(formData);
+
+        // The app key and secret are generated server side; show them once.
+        if (response.data?.credentials) {
+          setNewCredentials({
+            ...response.data.credentials,
+            businessName: response.data.business?.name ?? formData.name,
+          });
+          setSecretVisible(false);
+        }
       }
       handleCloseDialog();
       loadBusinesses();
@@ -298,68 +362,91 @@ export function BusinessesView() {
     <DashboardContent>
       <Box display="flex" alignItems="center" mb={3}>
         <Typography variant="h4" flexGrow={1}>
-          Businesses
+          Applications
         </Typography>
         <Button
           variant="contained"
           startIcon={<Iconify icon="mingcute:add-line" />}
           onClick={handleOpenDialog}
         >
-          Create Business
+          Create application
         </Button>
       </Box>
 
-      {/* Filters */}
-      <Card sx={{ p: 2, mb: 3 }}>
-        <Box display="flex" gap={2} flexWrap="wrap" alignItems="center">
-          <TextField
-            size="small"
-            label="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search businesses..."
-            sx={{ minWidth: 200 }}
-            InputProps={{
-              startAdornment: <Iconify icon="eva:search-fill" sx={{ ml: 1, mr: 0.5, color: 'text.disabled' }} />,
-            }}
-          />
-
-          <FormControl size="small" sx={{ minWidth: 150 }}>
-            <InputLabel>Status</InputLabel>
-            <Select
-              value={status}
-              label="Status"
-              onChange={(e) => setStatus(e.target.value)}
-            >
-              <MenuItem value="">All</MenuItem>
-              <MenuItem value="active">Active</MenuItem>
-              <MenuItem value="inactive">Inactive</MenuItem>
-              <MenuItem value="suspended">Suspended</MenuItem>
-            </Select>
-          </FormControl>
-
-          <Button
-            variant="outlined"
-            color="inherit"
-            onClick={handleClearFilters}
-            startIcon={<Iconify icon="solar:restart-bold" />}
-          >
-            Clear
-          </Button>
-        </Box>
-      </Card>
+      <TableFilters
+        fields={[
+          {
+            type: 'search',
+            name: 'search',
+            label: 'Search',
+            placeholder: 'Name, email, phone, city or app id',
+            minWidth: 260,
+          },
+          {
+            type: 'select',
+            name: 'status',
+            label: 'Status',
+            options: [
+              { value: 'active', label: 'Active' },
+              { value: 'inactive', label: 'Inactive' },
+              { value: 'suspended', label: 'Suspended' },
+            ],
+          },
+          {
+            type: 'select',
+            name: 'verification_status',
+            label: 'Verification',
+            options: [
+              { value: 'pending', label: 'Pending' },
+              { value: 'verified', label: 'Verified' },
+              { value: 'rejected', label: 'Rejected' },
+            ],
+          },
+          { type: 'text', name: 'city', label: 'City' },
+          { type: 'text', name: 'country', label: 'Country' },
+          { type: 'date', name: 'created_from', label: 'Created from' },
+          { type: 'date', name: 'created_to', label: 'Created to' },
+        ]}
+        values={filters}
+        onChange={handleFilterChange}
+        onReset={handleClearFilters}
+      />
 
       <Card>
         <TableContainer>
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Name</TableCell>
-                <TableCell>Email</TableCell>
+                <TableCell sortDirection={sortBy === 'name' ? sortDir : false}>
+                  <TableSortLabel
+                    active={sortBy === 'name'}
+                    direction={sortBy === 'name' ? sortDir : 'asc'}
+                    onClick={() => handleSort('name')}
+                  >
+                    Name
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell sortDirection={sortBy === 'email' ? sortDir : false}>
+                  <TableSortLabel
+                    active={sortBy === 'email'}
+                    direction={sortBy === 'email' ? sortDir : 'asc'}
+                    onClick={() => handleSort('email')}
+                  >
+                    Email
+                  </TableSortLabel>
+                </TableCell>
+                <TableCell>App key</TableCell>
                 <TableCell>Status</TableCell>
-                <TableCell>Subscription</TableCell>
-                <TableCell>Credits Balance</TableCell>
-                <TableCell>Created At</TableCell>
+                <TableCell>Verification</TableCell>
+                <TableCell sortDirection={sortBy === 'created_at' ? sortDir : false}>
+                  <TableSortLabel
+                    active={sortBy === 'created_at'}
+                    direction={sortBy === 'created_at' ? sortDir : 'asc'}
+                    onClick={() => handleSort('created_at')}
+                  >
+                    Created
+                  </TableSortLabel>
+                </TableCell>
                 <TableCell align="right">Actions</TableCell>
               </TableRow>
             </TableHead>
@@ -384,11 +471,36 @@ export function BusinessesView() {
                     <TableCell>{business.name}</TableCell>
                     <TableCell>{business.email}</TableCell>
                     <TableCell>
+                      {business.app_id ? (
+                        <Stack direction="row" spacing={0.5} alignItems="center">
+                          <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
+                            {`${business.app_id.slice(0, 12)}…`}
+                          </Typography>
+                          <Tooltip title={copied === `list-${business.id}` ? 'Copied' : 'Copy app key'}>
+                            <IconButton
+                              size="small"
+                              onClick={() => handleCopy(`list-${business.id}`, business.app_id!)}
+                            >
+                              <Iconify icon="solar:copy-bold" width={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Stack>
+                      ) : (
+                        '-'
+                      )}
+                    </TableCell>
+                    <TableCell>
                       <Chip label={business.status} color={getStatusColor(business.status)} size="small" />
                     </TableCell>
-                    <TableCell>{business.subscription_tier || '-'}</TableCell>
-                    <TableCell>{business.credits_balance || 0}</TableCell>
-                    <TableCell>{new Date(business.created_at).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Chip
+                        size="small"
+                        variant="outlined"
+                        label={business.verification_status ?? 'pending'}
+                        color={business.verification_status === 'verified' ? 'success' : 'default'}
+                      />
+                    </TableCell>
+                    <TableCell>{new Date(business.created_at).toLocaleDateString()}</TableCell>
                     <TableCell align="right">
                       <Box display="flex" gap={1} justifyContent="flex-end">
                         <Button
@@ -508,6 +620,110 @@ export function BusinessesView() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Credentials generated on creation: shown once, with a copy helper. */}
+      <Dialog
+        open={!!newCredentials}
+        onClose={() => setNewCredentials(null)}
+        fullWidth
+        maxWidth="sm"
+        disableEscapeKeyDown
+      >
+        <DialogTitle>Application created</DialogTitle>
+
+        <DialogContent dividers>
+          <Alert severity="success" sx={{ mb: 2.5 }}>
+            <strong>{newCredentials?.businessName}</strong> is ready. Its API key and secret were
+            generated automatically.
+          </Alert>
+
+          <Alert severity="warning" sx={{ mb: 2.5 }}>
+            Copy the app secret now and store it somewhere safe. You can always regenerate a new pair
+            from the application settings.
+          </Alert>
+
+          <Stack spacing={2}>
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                App key
+              </Typography>
+              <Paper variant="outlined" sx={{ p: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Typography
+                  variant="body2"
+                  sx={{ fontFamily: 'monospace', flexGrow: 1, wordBreak: 'break-all' }}
+                >
+                  {newCredentials?.app_id}
+                </Typography>
+                <Tooltip title={copied === 'app_id' ? 'Copied' : 'Copy'}>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleCopy('app_id', newCredentials?.app_id ?? '')}
+                  >
+                    <Iconify icon={copied === 'app_id' ? 'solar:check-circle-bold' : 'solar:copy-bold'} />
+                  </IconButton>
+                </Tooltip>
+              </Paper>
+            </Box>
+
+            <Box>
+              <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                App secret
+              </Typography>
+              <TextField
+                fullWidth
+                size="small"
+                value={newCredentials?.app_secret ?? ''}
+                type={secretVisible ? 'text' : 'password'}
+                slotProps={{
+                  htmlInput: { readOnly: true, style: { fontFamily: 'monospace' } },
+                  input: {
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton size="small" onClick={() => setSecretVisible(!secretVisible)}>
+                          <Iconify icon={secretVisible ? 'solar:eye-bold' : 'solar:eye-closed-bold'} />
+                        </IconButton>
+                        <Tooltip title={copied === 'app_secret' ? 'Copied' : 'Copy'}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleCopy('app_secret', newCredentials?.app_secret ?? '')}
+                          >
+                            <Iconify
+                              icon={copied === 'app_secret' ? 'solar:check-circle-bold' : 'solar:copy-bold'}
+                            />
+                          </IconButton>
+                        </Tooltip>
+                      </InputAdornment>
+                    ),
+                  },
+                }}
+              />
+            </Box>
+          </Stack>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            variant="contained"
+            onClick={() => {
+              setNewCredentials(null);
+              setSecretVisible(false);
+            }}
+          >
+            I have saved the credentials
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={!!copied}
+        autoHideDuration={2000}
+        onClose={() => setCopied('')}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert severity="success" variant="filled">
+          Copied to clipboard
+        </Alert>
+      </Snackbar>
     </DashboardContent>
   );
 }

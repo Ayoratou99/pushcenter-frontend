@@ -14,7 +14,7 @@ export function useChart(updatedOptions?: ChartOptions): ChartOptions {
 
   const baseOptions = baseChartOptions(theme) ?? {};
 
-  return merge(baseOptions, updatedOptions ?? {});
+  return merge(baseOptions, updatedOptions ?? {}) as ChartOptions;
 }
 
 // ----------------------------------------------------------------------

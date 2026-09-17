@@ -1,4 +1,5 @@
 import type { SyntheticEvent } from 'react';
+import type { Business } from 'src/services/types';
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
@@ -23,15 +24,14 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import type { Business } from 'src/services/types';
+import { businessService } from 'src/services';
+import { DashboardContent } from 'src/layouts/dashboard';
 
 import { Iconify } from 'src/components/iconify';
-import { DashboardContent } from 'src/layouts/dashboard';
-import { businessService } from 'src/services';
 
+import { SmsSettingsTab } from '../settings/sms-settings-tab';
 import { EmailSettingsTab } from '../settings/email-settings-tab';
 import { FacebookSettingsTab } from '../settings/facebook-settings-tab';
-import { SmsSettingsTab } from '../settings/sms-settings-tab';
 
 // ----------------------------------------------------------------------
 
@@ -375,7 +375,7 @@ export function BusinessDetailView() {
                       </Typography>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
-                        No app ID generated yet. Click "Regenerate" to create credentials.
+                        No app ID generated yet. Click &quot;Regenerate&quot; to create credentials.
                       </Typography>
                     )}
                   </Box>
@@ -424,7 +424,7 @@ export function BusinessDetailView() {
                       </Typography>
                     ) : (
                       <Typography variant="body2" color="text.secondary">
-                        No app secret generated yet. Click "Regenerate" to create credentials.
+                        No app secret generated yet. Click &quot;Regenerate&quot; to create credentials.
                       </Typography>
                     )}
                   </Box>
@@ -619,7 +619,7 @@ export function BusinessDetailView() {
             }}
             variant="contained"
           >
-            I've Saved the Credentials
+            I&apos;ve Saved the Credentials
           </Button>
         </DialogActions>
       </Dialog>

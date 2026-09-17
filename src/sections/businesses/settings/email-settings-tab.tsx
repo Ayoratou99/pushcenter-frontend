@@ -13,13 +13,14 @@ import InputLabel from '@mui/material/InputLabel';
 import IconButton from '@mui/material/IconButton';
 import FormControl from '@mui/material/FormControl';
 import DialogTitle from '@mui/material/DialogTitle';
+import Autocomplete from '@mui/material/Autocomplete';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
-import Autocomplete from '@mui/material/Autocomplete';
-import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
+import { Chip, Table, Paper, TableRow, TableBody, TableCell, TableHead, TableContainer } from '@mui/material';
 
 import apiClient from 'src/services/api.client';
+
 import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
@@ -34,6 +35,8 @@ interface SmtpSetting {
   username: string;
   from_email: string;
   from_name: string;
+  reply_to_email?: string | null;
+  reply_to_name?: string | null;
   is_active: boolean;
   is_default: boolean;
   test_status?: 'not_tested' | 'success' | 'failed';

@@ -36,3 +36,8 @@ build
 tsconfig.tsbuildinfo
 .ncurc.js
 knip.jsonc
+
+# TypeScript project-reference output (belongs in node_modules/.tmp)
+*.tsbuildinfo
+vite.config.d.ts
+vite.config.js

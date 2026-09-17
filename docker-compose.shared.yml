@@ -1,0 +1,12 @@
+# Overlay that joins the frontend to the backend stack's network.
+# Use it once the backend is running:
+#   docker compose -f docker-compose.yml -f docker-compose.shared.yml up -d
+services:
+  frontend:
+    networks:
+      - aninfpush
+
+networks:
+  aninfpush:
+    name: aninfpush_network
+    external: true

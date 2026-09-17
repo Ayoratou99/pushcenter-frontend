@@ -17,51 +17,44 @@ import { AnalyticsWebsiteVisits } from '../analytics-website-visits';
 // ----------------------------------------------------------------------
 
 export function AninfPushDashboardView() {
-  const { user, isAuthenticated, initialized } = useAuth();
+  const { user, isAuthenticated, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [messageTrends, setMessageTrends] = useState<any>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Debug logging
   useEffect(() => {
-    console.log('📊 Dashboard View - Auth State:', {
-      isAuthenticated,
-      initialized,
-      user: user?.preferred_username,
-    });
-  }, [isAuthenticated, initialized, user]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      console.log('📊 Loading dashboard data...');
-      loadDashboardData();
-    } else if (initialized && !isAuthenticated) {
-      console.log('⚠️ Not authenticated, user needs to login');
-      setLoading(false);
+    if (authLoading) {
+      return;
     }
-  }, [isAuthenticated, initialized]);
 
-  const loadDashboardData = async () => {
-    try {
-      setLoading(true);
-      
-      // Load stats and trends in parallel
-      const [statsResponse, trendsResponse] = await Promise.all([
-        dashboardService.getStats(),
-        dashboardService.getMessageTrends({ period: 'week' }),
-      ]);
-      
-      setStats(statsResponse.data);
-      setMessageTrends(trendsResponse.data);
-      setError(null);
-    } catch (err: any) {
-      console.error('Failed to load dashboard data:', err);
-      setError(err.response?.data?.message || 'Failed to load dashboard data');
-    } finally {
+    if (!isAuthenticated) {
       setLoading(false);
+      return;
     }
-  };
+
+    const loadDashboardData = async () => {
+      try {
+        setLoading(true);
+
+        // Load stats and trends in parallel
+        const [statsResponse, trendsResponse] = await Promise.all([
+          dashboardService.getStats(),
+          dashboardService.getMessageTrends({ period: 'week' }),
+        ]);
+
+        setStats(statsResponse.data);
+        setMessageTrends(trendsResponse.data);
+        setError(null);
+      } catch (err: any) {
+        setError(err.response?.data?.message || 'Failed to load dashboard data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadDashboardData();
+  }, [authLoading, isAuthenticated]);
 
   if (loading) {
     return (
@@ -85,7 +78,7 @@ export function AninfPushDashboardView() {
     );
   }
 
-  const userName = user?.preferred_username || user?.name || 'User';
+  const userName = user?.name || 'User';
 
   // Transform message trends data for chart
   const transformTrendsData = () => {

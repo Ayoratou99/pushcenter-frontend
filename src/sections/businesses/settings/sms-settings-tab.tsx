@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -16,13 +17,11 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import CircularProgress from '@mui/material/CircularProgress';
-import { Chip, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from '@mui/material';
-
-import axios from 'axios';
-
-import { Iconify } from 'src/components/iconify';
+import { Chip, Table, Paper, TableRow, TableBody, TableCell, TableHead, TableContainer } from '@mui/material';
 
 import { ENV_CONFIG } from 'src/config/env.config';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -327,7 +326,7 @@ export function SmsSettingsTab({ businessId }: SmsSettingsTabProps) {
               >
                 <MenuItem value="twilio">Twilio</MenuItem>
                 <MenuItem value="nexmo">Nexmo/Vonage</MenuItem>
-                <MenuItem value="africastalking">Africa's Talking</MenuItem>
+                <MenuItem value="africastalking">Africa&apos;s Talking</MenuItem>
                 <MenuItem value="orange">Orange SMS</MenuItem>
                 <MenuItem value="mtn">MTN SMS</MenuItem>
                 <MenuItem value="custom">Custom Provider</MenuItem>

@@ -1,11 +1,10 @@
+import axios from 'axios';
 import { useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
-
-import axios from 'axios';
 
 import { ENV_CONFIG } from 'src/config/env.config';
 

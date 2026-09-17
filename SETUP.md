@@ -1,198 +1,114 @@
 # Quick Setup Guide
 
-## Prerequisites Check
+## Prerequisites
 
-Before starting, ensure you have:
-- ✅ Node.js v20 or higher installed
-- ✅ Laravel backend (aninfpush_wsl) running on port 8000
-- ✅ Keycloak server configured and running on port 8080
+- Node.js **20 – 24** (the Docker image builds on Node 22)
+- The AninfPush API (`aninfpush_wsl`) reachable, by default on port 8000
 
-## Quick Start (5 minutes)
+## Quick start
 
-### Step 1: Install Dependencies
+### 1. Install dependencies
 
-From WSL terminal:
 ```bash
-cd /home/arthur/aninfpushmanagementfront
-npm install --legacy-peer-deps
+npm install
 ```
 
-### Step 2: Configure Environment
+`.npmrc` pins `legacy-peer-deps=true`, because the CKEditor 5 build packages still declare peers
+against an older `@ckeditor/ckeditor5-*` line. Do not pass the flag by hand: the file keeps
+`npm install`, `npm ci` and the Docker build on the exact same tree.
 
-The `.env` file is already created with default values. Update if needed:
+### 2. Configure the environment
+
 ```bash
-nano .env
+cp .env.example .env
 ```
 
-### Step 3: Start Development Server
+| Variable | Default | Purpose |
+|---|---|---|
+| `VITE_API_BASE_URL` | `http://localhost:8000/api/v1` | API root, **including** the `/api/v1` prefix |
+| `VITE_API_TIMEOUT` | `30000` | Request timeout, in milliseconds |
+| `VITE_APP_NAME` | `AninfPush Management` | Shown in page titles |
+| `VITE_APP_VERSION` | `1.0.0` | Displayed in the UI |
+| `VITE_FACEBOOK_APP_ID` | *(empty)* | Only needed for the WhatsApp connection flow |
+
+### 3. Start the dev server
 
 ```bash
 npm run dev
 ```
 
-The app will be available at: **http://localhost:5173**
+The app is served on **http://localhost:3039**.
 
-## Keycloak Configuration
+### 4. Create an administrator
 
-### Create Realm
+Authentication is internal, so the first account is created from the API side:
 
-1. Access Keycloak Admin Console: http://localhost:8080
-2. Click **Add Realm**
-3. Name: `aninfpush`
-4. Click **Create**
+```bash
+# in the aninfpush_wsl repository
+php artisan admin:create --email=admin@example.com --password='Secret123' --name="Administrator"
 
-### Create Client
+# or, with the stack running in Docker
+docker compose exec app php artisan admin:create --email=admin@example.com --password='Secret123' --name="Administrator"
+```
 
-1. In the `aninfpush` realm, go to **Clients**
-2. Click **Create**
-3. Client ID: `aninfpush-frontend`
-4. Click **Save**
+Sign in with those credentials. Google Authenticator is mandatory, so the first login opens the
+setup wizard: scan the QR code (or type the key), confirm a 6 digit code, and save the recovery
+codes it hands back.
 
-### Configure Client
+## Authentication in the app
 
-Set these values:
-- **Access Type**: `public`
-- **Valid Redirect URIs**: `http://localhost:5173/*`
-- **Web Origins**: `http://localhost:5173`
-- **Direct Access Grants Enabled**: `ON`
+- `src/auth/auth-context.tsx` holds the session and exposes `useAuth()`.
+- `src/auth/tokens.ts` stores the JWT pair; the access token is refreshed transparently by the axios
+  interceptor in `src/services/api.client.ts`.
+- `src/auth/auth-guard.tsx` gates the routes: `AuthGuard` (signed in **and** 2FA confirmed),
+  `GuestGuard` (sign-in page) and `RoleGuard` (admin-only areas such as `/users`).
 
-Click **Save**
+## Build
 
-### Create Test User
+```bash
+npm run build     # type check + production bundle into dist/
+npm run start     # serve the built bundle locally
+npm run re:build  # wipe node_modules and dist, reinstall, rebuild
+```
 
-1. Go to **Users** → **Add User**
-2. Username: `testuser`
-3. Email: `test@aninfpush.com`
-4. Save
-5. Go to **Credentials** tab
-6. Set password: `test123`
-7. Disable **Temporary** password option
-8. Click **Set Password**
+The fragile packages (`react`, `@types/react`, `@mui/material`, `@mui/lab`, `apexcharts`, `typescript`,
+`vite`) are pinned to exact versions, because their minor releases have broken this build before.
+Upgrade them deliberately, one at a time, and run `npm run build` after each.
 
-## Testing the Application
+## Docker
 
-1. Open http://localhost:5173
-2. You'll be redirected to Keycloak login
-3. Login with your test user
-4. You'll see the dashboard
+```bash
+docker build -t aninfpush-frontend .
+docker compose up -d
+```
+
+The bundle reads `window.__APP_CONFIG__` from `/config.js`, which the container entrypoint rewrites
+from the environment on every start. One image therefore serves any environment:
+
+```bash
+docker run -p 80:8080 -e VITE_API_BASE_URL=https://api.example.com/api/v1 aninfpush-frontend
+```
+
+To put the frontend on the same network as the backend stack (start the backend first):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.shared.yml up -d
+```
 
 ## Troubleshooting
 
-### "Cannot find module" errors
-```bash
-rm -rf node_modules package-lock.json
-npm install --legacy-peer-deps
-```
+**`npm ci` fails with "package.json and package-lock.json are not in sync"**
+Regenerate the lockfile with `npm install` (never `npm install --legacy-peer-deps`; the flag already
+lives in `.npmrc`), then commit `package-lock.json`.
 
-### Port 5173 already in use
-```bash
-# Kill the process
-npx kill-port 5173
-# Or change port in vite.config.ts
-```
+**The build fails with type errors in `node_modules` or in MUI layout files**
+A transitive package drifted. Check `npm ls @types/react @mui/material` against the pinned versions
+in `package.json` and run `npm run re:build`.
 
-### Keycloak connection error
-- Check Keycloak is running: `curl http://localhost:8080`
-- Verify realm and client names match `.env` file
-- Check browser console for detailed errors
+**Every request answers 401**
+`VITE_API_BASE_URL` is wrong, or misses the `/api/v1` suffix. In Docker, check the entrypoint log
+line `Runtime config written to ...`.
 
-### API connection error
-- Verify Laravel backend is running: `curl http://localhost:8000/api`
-- Check `.env` VITE_API_BASE_URL matches backend URL
-- Ensure backend has proper CORS configuration
-
-## File Structure Overview
-
-```
-aninfpushmanagementfront/
-├── src/
-│   ├── config/              # ⚙️ Configuration
-│   ├── services/            # 🔌 API Services
-│   ├── pages/               # 📄 Page Components
-│   ├── sections/            # 🧩 Section Components
-│   ├── contexts/            # 🔐 Auth Context
-│   ├── hooks/               # 🪝 Custom Hooks
-│   └── routes/              # 🛤️ Routing
-├── .env                     # 🔧 Environment Config
-└── package.json             # 📦 Dependencies
-```
-
-## Next Steps
-
-1. ✅ Install dependencies
-2. ✅ Configure Keycloak
-3. ✅ Start the app
-4. 📊 View dashboard at http://localhost:5173
-5. 📨 Test Messages page
-6. 📝 Test Templates page
-7. 🏢 Test Businesses page
-
-## Available API Endpoints
-
-The frontend connects to these backend endpoints:
-
-### Dashboard
-- `GET /api/dashboard/stats` - Dashboard statistics
-- `GET /api/dashboard/recent-messages` - Recent messages
-- `GET /api/dashboard/message-trends` - Message trends
-- `GET /api/dashboard/cost-analysis` - Cost analysis
-
-### Messages
-- `GET /api/messages` - List messages
-- `GET /api/messages/:id` - Get message
-- `POST /api/messages/whatsapp` - Send WhatsApp
-- `POST /api/messages/sms` - Send SMS  
-- `POST /api/messages/email` - Send Email
-- `POST /api/messages/:id/retry` - Retry message
-- `POST /api/messages/:id/cancel` - Cancel message
-- `DELETE /api/messages/:id` - Delete message
-
-### Templates
-- `GET /api/templates` - List templates
-- `GET /api/templates/:id` - Get template
-- `POST /api/templates` - Create template
-- `PUT /api/templates/:id` - Update template
-- `DELETE /api/templates/:id` - Delete template
-- `POST /api/templates/:id/activate` - Activate
-- `POST /api/templates/:id/deactivate` - Deactivate
-
-### Businesses
-- `GET /api/businesses` - List businesses
-- `GET /api/businesses/:id` - Get business
-- `POST /api/businesses` - Create business
-- `PUT /api/businesses/:id` - Update business
-- `DELETE /api/businesses/:id` - Delete business
-- `GET /api/businesses/:id/stats` - Business stats
-
-## Development Tips
-
-### Hot Reload
-The dev server supports hot module replacement. Changes will reflect instantly.
-
-### TypeScript
-Use proper types from `src/services/types/` for type safety.
-
-### Custom Hook
-Use `useAuth()` hook to access authentication:
-```typescript
-import { useAuth } from 'src/hooks/useAuth';
-
-const { user, isAuthenticated, login, logout } = useAuth();
-```
-
-### API Calls
-```typescript
-import { messageService } from 'src/services';
-
-const messages = await messageService.getAll({ page: 1 });
-```
-
-## Production Build
-
-```bash
-npm run build
-npm run start  # Preview production build
-```
-
-Deploy the `dist/` directory to your web server.
-
+**Every request answers 403 `two_factor_setup_required`**
+The account has not finished the Google Authenticator enrolment. Sign out and back in to reopen the
+wizard, or ask an administrator to reset it from **Users**.

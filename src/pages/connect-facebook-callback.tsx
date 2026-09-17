@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -9,11 +10,9 @@ import AlertTitle from '@mui/material/AlertTitle';
 import Typography from '@mui/material/Typography';
 import CircularProgress from '@mui/material/CircularProgress';
 
-import axios from 'axios';
+import { ENV_CONFIG } from 'src/config/env.config';
 
 import { Iconify } from 'src/components/iconify';
-
-import { ENV_CONFIG } from 'src/config/env.config';
 
 // ----------------------------------------------------------------------
 

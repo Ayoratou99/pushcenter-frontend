@@ -1,245 +1,199 @@
 # AninfPush Management Frontend
 
-A modern React-based management dashboard for the AninfPush messaging platform. Built with Material-UI, TypeScript, and Keycloak authentication.
+Management console for the AninfPush multi-channel messaging API (Email, SMS, WhatsApp).
 
 ## Features
 
-- 🔐 **Keycloak Authentication** - Secure SSO integration
-- 📊 **Dashboard Analytics** - Real-time messaging statistics and insights
-- 📨 **Message Management** - View and manage Email, SMS, and WhatsApp messages
-- 📝 **Template Management** - Create and manage message templates
-- 🏢 **Business Management** - Manage multiple business accounts
-- 🎨 **Modern UI** - Built with Material-UI v7 and latest design patterns
-- ⚡ **Fast Performance** - Vite-powered development and build
-- 🔄 **Real-time Updates** - API integration with Laravel backend
+- 📊 **Dashboard analytics** — messaging statistics, trends and cost analysis
+- 📨 **Messages** — browse every channel, with filters on template, recipient, campaign, status, dates and cost
+- 📝 **Templates** — create, edit, and **export / import** templates as JSON or TXT between applications
+- 🏢 **Applications** — manage businesses; the API key and secret are generated automatically on creation
+- 👥 **Users** — internal user management, with managers assigned globally or to specific applications (admin only)
+- 🔐 **Internal authentication** — JWT access tokens with rotating refresh tokens, and mandatory Google Authenticator
+- 🎨 Material-UI v7, React 19, Vite
 
-## Tech Stack
+## Tech stack
 
-- **React 19** - Latest React with improved performance
-- **TypeScript** - Type-safe development
-- **Material-UI v7** - Modern component library
-- **Vite** - Next generation frontend tooling
-- **Keycloak** - Authentication and authorization
-- **Axios** - HTTP client for API calls
-- **React Router v7** - Client-side routing
-- **ApexCharts** - Beautiful data visualizations
+- **React 19** + **TypeScript**
+- **Material-UI v7**
+- **Vite 6**
+- **Axios** — with transparent token refresh
+- **React Router v7**
+- **ApexCharts**
 
 ## Prerequisites
 
-- Node.js >= 20
-- npm or yarn
-- Keycloak server running (default: http://localhost:8080)
-- AninfPush Laravel backend (default: http://localhost:8000)
+- Node.js **20 – 24**
+- The AninfPush Laravel backend, by default on http://localhost:8000
 
 ## Installation
 
-1. **Clone or navigate to the project:**
-   ```bash
-   cd /home/arthur/aninfpushmanagementfront
-   ```
+```bash
+npm install
+```
 
-2. **Install dependencies:**
-   ```bash
-   # Using npm (from within WSL or native Linux)
-   npm install --legacy-peer-deps
-   
-   # Or using yarn
-   yarn install
-   ```
+`.npmrc` sets `legacy-peer-deps=true` (the CKEditor 5 build packages still declare peers against an
+older `@ckeditor/ckeditor5-*` line). Do not pass the flag manually — the file keeps `npm install`,
+`npm ci` and the Docker build on the exact same tree.
 
-3. **Configure environment variables:**
-   
-   Copy `.env.example` to `.env` and update the values:
-   ```env
-   # API Configuration
-   VITE_API_BASE_URL=http://localhost:8000/api
-   VITE_API_TIMEOUT=30000
+Copy the environment template and point it at your API:
 
-   # Keycloak Configuration
-   VITE_KEYCLOAK_URL=http://localhost:8080
-   VITE_KEYCLOAK_REALM=aninfpush
-   VITE_KEYCLOAK_CLIENT_ID=aninfpush-frontend
+```bash
+cp .env.example .env
+```
 
-   # App Configuration
-   VITE_APP_NAME=AninfPush Management
-   VITE_APP_VERSION=1.0.0
-   ```
+```env
+VITE_API_BASE_URL=http://localhost:8000/api/v1   # include the /api/v1 suffix
+VITE_API_TIMEOUT=30000
+VITE_APP_NAME=AninfPush Management
+VITE_APP_VERSION=1.0.0
+VITE_FACEBOOK_APP_ID=
+```
 
 ## Development
 
-Start the development server:
-
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-The application will be available at `http://localhost:5173`
+Available at **http://localhost:3039**.
 
-## Building for Production
+Create the first account from the backend, then sign in with it:
 
 ```bash
-npm run build
-# or
-yarn build
+php artisan admin:create --email=admin@example.com --password='Secret123' --name="Administrator"
 ```
 
-The built files will be in the `dist` directory.
+Google Authenticator is mandatory: the first login opens a guided setup (QR code, manual key,
+confirmation code, recovery codes).
 
-## Project Structure
+## Build
 
-```
-aninfpushmanagementfront/
-├── src/
-│   ├── config/              # Configuration files
-│   │   ├── env.config.ts    # Environment variables
-│   │   └── keycloak.config.ts  # Keycloak setup
-│   ├── contexts/            # React contexts
-│   │   └── KeycloakProvider.tsx  # Auth provider
-│   ├── hooks/               # Custom React hooks
-│   │   └── useAuth.ts       # Authentication hook
-│   ├── services/            # API services
-│   │   ├── api.client.ts    # Axios client with interceptors
-│   │   ├── business.service.ts
-│   │   ├── message.service.ts
-│   │   ├── template.service.ts
-│   │   ├── dashboard.service.ts
-│   │   └── types/           # TypeScript types
-│   ├── pages/               # Page components
-│   │   ├── dashboard.tsx
-│   │   ├── messages.tsx
-│   │   ├── templates.tsx
-│   │   └── businesses.tsx
-│   ├── sections/            # Section components
-│   │   ├── overview/        # Dashboard views
-│   │   ├── messages/        # Message management
-│   │   ├── templates/       # Template management
-│   │   └── businesses/      # Business management
-│   ├── layouts/             # Layout components
-│   │   └── dashboard/       # Main dashboard layout
-│   ├── routes/              # Routing configuration
-│   │   └── sections.tsx     # Route definitions
-│   ├── components/          # Reusable components
-│   ├── theme/               # MUI theme configuration
-│   └── main.tsx             # Application entry point
-├── public/                  # Static assets
-├── .env                     # Environment variables
-├── .env.example             # Environment template
-├── package.json             # Dependencies
-├── tsconfig.json            # TypeScript config
-├── vite.config.ts           # Vite config
-└── README.md                # This file
-```
-
-## API Services
-
-### Authentication
-The app uses Keycloak for authentication. The token is automatically included in all API requests.
-
-### API Client
-- Automatic token refresh on 401 errors
-- Request/response interceptors
-- Error handling
-- TypeScript typed responses
-
-### Available Services
-
-1. **Dashboard Service**
-   - `getStats()` - Get dashboard statistics
-   - `getRecentMessages()` - Get recent messages
-   - `getMessageTrends()` - Get message trends
-   - `getCostAnalysis()` - Get cost analysis
-
-2. **Message Service**
-   - `getAll()` - List all messages
-   - `getById()` - Get message details
-   - `sendWhatsApp()` - Send WhatsApp message
-   - `sendSms()` - Send SMS message
-   - `sendEmail()` - Send Email message
-   - `retry()` - Retry failed message
-   - `cancel()` - Cancel pending message
-
-3. **Template Service**
-   - `getAll()` - List all templates
-   - `getById()` - Get template details
-   - `create()` - Create new template
-   - `update()` - Update template
-   - `delete()` - Delete template
-   - `activate()` / `deactivate()` - Toggle template status
-
-4. **Business Service**
-   - `getAll()` - List all businesses
-   - `getById()` - Get business details
-   - `create()` - Create new business
-   - `update()` - Update business
-   - `delete()` - Delete business
-   - `getStats()` - Get business statistics
-
-## Keycloak Setup
-
-1. Create a realm named `aninfpush` in your Keycloak instance
-2. Create a client with ID `aninfpush-frontend`
-3. Configure the client:
-   - Access Type: public
-   - Valid Redirect URIs: `http://localhost:5173/*`
-   - Web Origins: `http://localhost:5173`
-   - Enable "Direct Access Grants"
-
-## Navigation
-
-The dashboard includes the following sections:
-
-- **Dashboard** - Overview with statistics and charts
-- **Messages** - View and manage all messages (Email, SMS, WhatsApp)
-- **Templates** - Manage message templates
-- **Businesses** - Manage business accounts
-- **User** - User management (from template)
-- **Product** - Product management (from template)
-- **Blog** - Blog management (from template)
-
-## Development Notes
-
-### WSL Users
-If you encounter permission issues with npm, use the following:
 ```bash
-# Install from native WSL terminal, not through Windows
-cd /home/arthur/aninfpushmanagementfront
-npm install --legacy-peer-deps
+npm run build     # tsc -b && vite build, output in dist/
+npm run start     # preview the built bundle
+npm run re:build  # wipe node_modules and dist, reinstall, rebuild
 ```
 
-### React 19 Compatibility
-The project uses React 19 which may require `--legacy-peer-deps` flag for some packages that haven't updated their peer dependencies yet.
+> The fragile packages (`react`, `@types/react`, `@mui/material`, `@mui/lab`, `apexcharts`,
+> `typescript`, `vite`, `vite-plugin-checker`) are **pinned to exact versions**, because their minor
+> releases have broken this build before. Upgrade them one at a time and run `npm run build` after each.
+
+## Docker
+
+```bash
+docker build -t aninfpush-frontend .
+docker compose up -d
+```
+
+The bundle reads `window.__APP_CONFIG__` from `/config.js`, rewritten by the container entrypoint on
+every start, so a single image serves any environment:
+
+```bash
+docker run -p 80:8080 -e VITE_API_BASE_URL=https://api.example.com/api/v1 aninfpush-frontend
+```
+
+Join the backend stack's network (start the backend first):
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.shared.yml up -d
+```
+
+## Project structure
+
+```
+src/
+├── auth/                    # Session, guards and token storage
+│   ├── auth-context.tsx     # AuthProvider + useAuth()
+│   ├── auth-guard.tsx       # AuthGuard / GuestGuard / RoleGuard
+│   ├── tokens.ts            # Access + refresh token storage
+│   └── types.ts
+├── config/
+│   └── env.config.ts        # Runtime config, then VITE_*, then defaults
+├── services/                # API layer
+│   ├── api.client.ts        # Axios client, bearer token, silent refresh
+│   ├── auth.service.ts      # Login, 2FA, profile, password
+│   ├── user.service.ts      # User management + manager assignment
+│   ├── template-transfer.service.ts   # Template export / import
+│   └── …
+├── pages/                   # Route entry points
+├── sections/                # Screens
+│   ├── auth/                # Sign-in and the 2FA setup wizard
+│   ├── profile/             # Profile, password, two-factor
+│   ├── users/               # User management (admin)
+│   ├── templates/           # Templates, editors, import dialog
+│   ├── messages/            # Message list
+│   ├── businesses/          # Applications and their settings
+│   └── overview/            # Dashboard
+├── components/
+│   ├── table-filters/       # Filter bar shared by every list screen
+│   └── …
+├── layouts/                 # Dashboard and auth layouts
+└── routes/sections.tsx      # Route definitions and guards
+```
+
+## Authentication
+
+| File | Role |
+|---|---|
+| `src/auth/auth-context.tsx` | Holds the session, exposes `useAuth()` |
+| `src/auth/tokens.ts` | Stores the JWT pair in `localStorage` |
+| `src/services/api.client.ts` | Adds the bearer token; refreshes it once on a 401 and replays the request |
+| `src/auth/auth-guard.tsx` | `AuthGuard` (signed in + 2FA done), `GuestGuard`, `RoleGuard` |
+
+Sign-in flow:
+
+1. `POST /auth/login` with email + password.
+2. If 2FA was never configured, the user is sent to `/two-factor-setup` with a short lived setup token.
+3. Otherwise a challenge token is returned and the 6 digit code is asked. A recovery code also works.
+4. Tokens are stored, and the refresh token is rotated on every refresh.
+
+## Template export / import
+
+- **Export** — from the Templates table, per row or on a multi-selection, as JSON or TXT.
+- **Import** — drop a `.json` or `.txt` export; the file carries the template type, so the only
+  choice is which application to attach it to. Imported templates land as inactive drafts, and a
+  name already taken is suffixed automatically.
+
+## Filters
+
+Every table uses the shared `TableFilters` bar: all filters combine, active ones are shown as
+removable chips, and columns are sortable.
+
+| Screen | Filters |
+|---|---|
+| Messages | search, channel, status, application, **template**, template vs free form, recipient, campaign, errors, date range, cost range |
+| Templates | search, channel, status, category, application, enabled, language, date range, minimum uses |
+| Applications | search (name, email, phone, city, app key), status, verification, city, country, date range |
+| Users | search, role, access scope, application, status, 2FA state, date range |
 
 ## Scripts
 
-- `npm run dev` - Start development server
-- `npm run build` - Build for production
-- `npm run start` - Preview production build
-- `npm run lint` - Run ESLint
-- `npm run lint:fix` - Fix ESLint errors
-- `npm run fm:check` - Check Prettier formatting
-- `npm run fm:fix` - Fix Prettier formatting
-- `npm run fix:all` - Run lint:fix and fm:fix
+| Script | Purpose |
+|---|---|
+| `npm run dev` | Development server |
+| `npm run build` | Type check and production build |
+| `npm run start` | Preview the built bundle |
+| `npm run lint` / `lint:fix` | ESLint |
+| `npm run fm:check` / `fm:fix` | Prettier |
+| `npm run fix:all` | Lint and format |
+| `npm run re:build` | Clean reinstall and rebuild |
 
-## Environment Variables
+## Environment variables
 
-All environment variables must be prefixed with `VITE_` to be accessible in the application.
+Build-time variables are prefixed with `VITE_`. In Docker the same names are read at **runtime** by
+the entrypoint and written into `/config.js`.
 
 | Variable | Description | Default |
-|----------|-------------|---------|
-| VITE_API_BASE_URL | Backend API URL | http://localhost:8000/api |
-| VITE_API_TIMEOUT | API request timeout (ms) | 30000 |
-| VITE_KEYCLOAK_URL | Keycloak server URL | http://localhost:8080 |
-| VITE_KEYCLOAK_REALM | Keycloak realm name | aninfpush |
-| VITE_KEYCLOAK_CLIENT_ID | Keycloak client ID | aninfpush-frontend |
-| VITE_APP_NAME | Application name | AninfPush Management |
-| VITE_APP_VERSION | Application version | 1.0.0 |
+|---|---|---|
+| `VITE_API_BASE_URL` | API root, including `/api/v1` | `http://localhost:8000/api/v1` |
+| `VITE_API_TIMEOUT` | Request timeout (ms) | `30000` |
+| `VITE_APP_NAME` | Application name | `AninfPush Management` |
+| `VITE_APP_VERSION` | Application version | `1.0.0` |
+| `VITE_FACEBOOK_APP_ID` | Facebook app for the WhatsApp connection flow | *(empty)* |
+
+See [SETUP.md](SETUP.md) for the step by step guide and troubleshooting.
 
 ## License
 
 MIT
-
-## Support
-
-For issues and questions, please contact the development team.

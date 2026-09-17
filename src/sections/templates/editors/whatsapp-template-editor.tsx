@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
-import Chip from '@mui/material/Chip';
+import Card from '@mui/material/Card';
 import Stack from '@mui/material/Stack';
 import Alert from '@mui/material/Alert';
 import Paper from '@mui/material/Paper';
@@ -12,15 +12,13 @@ import MenuItem from '@mui/material/MenuItem';
 import TextField from '@mui/material/TextField';
 import InputLabel from '@mui/material/InputLabel';
 import Typography from '@mui/material/Typography';
-import FormControl from '@mui/material/FormControl';
-import CircularProgress from '@mui/material/CircularProgress';
 import IconButton from '@mui/material/IconButton';
-import Autocomplete from '@mui/material/Autocomplete';
-import Card from '@mui/material/Card';
+import FormControl from '@mui/material/FormControl';
 import CardContent from '@mui/material/CardContent';
-import Divider from '@mui/material/Divider';
+import Autocomplete from '@mui/material/Autocomplete';
+import CircularProgress from '@mui/material/CircularProgress';
 
-import { whatsappTemplateService, businessService, type Business } from 'src/services';
+import { type Business, businessService, whatsappTemplateService } from 'src/services';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -246,7 +244,7 @@ export function WhatsAppTemplateEditor() {
         description: formData.description,
         language: formData.language,
         category: formData.category,
-        status: status.toLowerCase(),
+        status: status.toLowerCase() as 'draft' | 'pending',
         is_active: status === 'PENDING',
         body: bodyText,
         components,

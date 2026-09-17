@@ -71,7 +71,7 @@ export function AuthLayout({
         layoutQuery={layoutQuery}
         {...slotProps?.header}
         slots={{ ...headerSlots, ...slotProps?.header?.slots }}
-        slotProps={merge(headerSlotProps, slotProps?.header?.slotProps ?? {})}
+        slotProps={merge(headerSlotProps, slotProps?.header?.slotProps ?? {}) as HeaderSectionProps['slotProps']}
         sx={[
           { position: { [layoutQuery]: 'fixed' } },
           ...(Array.isArray(slotProps?.header?.sx)

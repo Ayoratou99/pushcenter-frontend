@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { useState, useEffect } from 'react';
 
 import Box from '@mui/material/Box';
@@ -8,13 +9,11 @@ import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
 import AlertTitle from '@mui/material/AlertTitle';
 import CircularProgress from '@mui/material/CircularProgress';
-import { Chip, Divider, List, ListItem, ListItemText } from '@mui/material';
-
-import axios from 'axios';
-
-import { Iconify } from 'src/components/iconify';
+import { Chip, List, Divider, ListItem, ListItemText } from '@mui/material';
 
 import { ENV_CONFIG } from 'src/config/env.config';
+
+import { Iconify } from 'src/components/iconify';
 
 // ----------------------------------------------------------------------
 
@@ -192,9 +191,7 @@ export function FacebookSettingsTab({ businessId }: FacebookSettingsTabProps) {
     );
   }
 
-  const getPublicConnectionLink = () => {
-    return `${window.location.origin}/connect-facebook/${businessId}`;
-  };
+  const getPublicConnectionLink = () => `${window.location.origin}/connect-facebook/${businessId}`;
 
   const handleCopyLink = () => {
     const link = getPublicConnectionLink();

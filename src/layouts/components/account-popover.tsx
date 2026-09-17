@@ -16,6 +16,8 @@ import { useRouter, usePathname } from 'src/routes/hooks';
 
 import { useAuth } from 'src/hooks/useAuth';
 
+import { Label } from 'src/components/label';
+
 // ----------------------------------------------------------------------
 
 export type AccountPopoverProps = IconButtonProps & {
@@ -66,8 +68,8 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         }}
         {...other}
       >
-        <Avatar src={undefined} alt={user?.preferred_username || 'User'} sx={{ width: 1, height: 1 }}>
-          {user?.preferred_username?.charAt(0).toUpperCase() || 'U'}
+        <Avatar src={undefined} alt={user?.name || 'User'} sx={{ width: 1, height: 1 }}>
+          {user?.name?.charAt(0).toUpperCase() || 'U'}
         </Avatar>
       </IconButton>
 
@@ -85,12 +87,19 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
       >
         <Box sx={{ p: 2, pb: 1.5 }}>
           <Typography variant="subtitle2" noWrap>
-            {user?.preferred_username || 'User'}
+            {user?.name || 'User'}
           </Typography>
 
           <Typography variant="body2" sx={{ color: 'text.secondary' }} noWrap>
             {user?.email || ''}
           </Typography>
+
+          <Label
+            color={user?.role === 'admin' ? 'primary' : 'default'}
+            sx={{ mt: 1 }}
+          >
+            {user?.role === 'admin' ? 'Administrator' : 'Manager'}
+          </Label>
         </Box>
 
         <Divider sx={{ borderStyle: 'dashed' }} />
@@ -131,7 +140,17 @@ export function AccountPopover({ data = [], sx, ...other }: AccountPopoverProps)
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Box sx={{ p: 1 }}>
-          <Button fullWidth color="error" size="medium" variant="text" onClick={logout}>
+          <Button
+            fullWidth
+            color="error"
+            size="medium"
+            variant="text"
+            onClick={async () => {
+              handleClosePopover();
+              await logout();
+              router.push('/sign-in');
+            }}
+          >
             Logout
           </Button>
         </Box>

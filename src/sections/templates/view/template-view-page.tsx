@@ -12,10 +12,10 @@ import CircularProgress from '@mui/material/CircularProgress';
 
 import { DashboardContent } from 'src/layouts/dashboard';
 import { 
-  emailTemplateService,
+  type Template,
   smsTemplateService,
-  whatsappTemplateService,
-  type Template 
+  emailTemplateService,
+  whatsappTemplateService 
 } from 'src/services';
 
 import { Iconify } from 'src/components/iconify';
@@ -73,8 +73,8 @@ export function TemplateViewPage() {
     }
   };
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
+  const getTypeColor = (templateType: string) => {
+    switch (templateType) {
       case 'email':
         return 'primary';
       case 'sms':
@@ -260,7 +260,7 @@ export function TemplateViewPage() {
                 No Preview Available
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                This template was created with an older version and doesn't have preview data.
+                This template was created with an older version and doesn&apos;t have preview data.
                 Please create a new template to see the preview functionality.
               </Typography>
             </Box>
