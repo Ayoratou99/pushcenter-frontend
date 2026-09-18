@@ -9,6 +9,8 @@ Management console for the AninfPush multi-channel messaging API (Email, SMS, Wh
 - 📝 **Templates** — create, edit, and **export / import** templates as JSON or TXT between applications
 - 🏢 **Applications** — manage businesses; the API key and secret are generated automatically on creation
 - 👥 **Users** — internal user management, with managers assigned globally or to specific applications (admin only)
+- 🔔 **Live notifications** — failed deliveries, undelivered webhooks and broken SMTP configurations, straight in the header
+- 📚 **API documentation** — the backend's Swagger UI embedded in the sidebar
 - 🔐 **Internal authentication** — JWT access tokens with rotating refresh tokens, and mandatory Google Authenticator
 - 🎨 Material-UI v7, React 19, Vite
 
@@ -43,12 +45,22 @@ cp .env.example .env
 ```
 
 ```env
-VITE_API_BASE_URL=http://localhost:8000/api/v1   # include the /api/v1 suffix
+# Backend the console talks to. Include the /api/v1 suffix.
+VITE_API_BASE_URL=http://localhost:8000/api/v1
 VITE_API_TIMEOUT=30000
+
+# Swagger UI embedded in the sidebar. Empty means "the API origin +
+# /api/documentation", which is right in almost every deployment.
+VITE_API_DOCS_URL=
+
 VITE_APP_NAME=AninfPush Management
 VITE_APP_VERSION=1.0.0
 VITE_FACEBOOK_APP_ID=
 ```
+
+> The backend must know this console's origin in return: set `FRONTEND_URL` on
+> the API side. It drives both the CORS allow-list and the permission for this
+> console to embed the API documentation.
 
 ## Development
 
@@ -167,6 +179,10 @@ removable chips, and columns are sortable.
 | Applications | search (name, email, phone, city, app key), status, verification, city, country, date range |
 | Users | search, role, access scope, application, status, 2FA state, date range |
 
+Every list guards against out-of-order responses: when filters change faster than
+the API answers, a stale response can no longer repaint the table
+(`src/hooks/use-latest-request.ts`).
+
 ## Scripts
 
 | Script | Purpose |
@@ -186,7 +202,8 @@ the entrypoint and written into `/config.js`.
 
 | Variable | Description | Default |
 |---|---|---|
-| `VITE_API_BASE_URL` | API root, including `/api/v1` | `http://localhost:8000/api/v1` |
+| `VITE_API_BASE_URL` | API root, **including** `/api/v1` | `http://localhost:8000/api/v1` |
+| `VITE_API_DOCS_URL` | Swagger UI embedded in the sidebar. Derived from the API origin when empty | *(derived)* |
 | `VITE_API_TIMEOUT` | Request timeout (ms) | `30000` |
 | `VITE_APP_NAME` | Application name | `AninfPush Management` |
 | `VITE_APP_VERSION` | Application version | `1.0.0` |

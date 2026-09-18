@@ -34,6 +34,8 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { useLatestRequest } from 'src/hooks/use-latest-request';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import { type Business, businessService } from 'src/services';
 
@@ -56,6 +58,7 @@ const EMPTY_FILTERS: Record<string, string> = {
 
 export function BusinessesView() {
   const navigate = useNavigate();
+  const { start, isCurrent } = useLatestRequest();
   const [businesses, setBusinesses] = useState<Business[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -208,6 +211,8 @@ export function BusinessesView() {
   }, [page, rowsPerPage, filters, sortBy, sortDir]);
 
   const loadBusinesses = async () => {
+    const token = start();
+
     try {
       setLoading(true);
 
@@ -223,12 +228,17 @@ export function BusinessesView() {
       });
 
       const response = await businessService.getAll(params);
+
+      // A newer request already took over; its answer is the current one.
+      if (!isCurrent(token)) return;
+
       setBusinesses(response.data.data);
       setTotal(response.data.total);
     } catch (error) {
+      if (!isCurrent(token)) return;
       console.error('Failed to load businesses:', error);
     } finally {
-      setLoading(false);
+      if (isCurrent(token)) setLoading(false);
     }
   };
 

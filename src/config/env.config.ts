@@ -5,6 +5,7 @@
  */
 type RuntimeConfig = {
   API_BASE_URL?: string;
+  API_DOCS_URL?: string;
   API_TIMEOUT?: string;
   APP_NAME?: string;
   APP_VERSION?: string;
@@ -36,8 +37,29 @@ function read(runtimeKey: keyof RuntimeConfig, buildValue: unknown, fallback: st
 
 const apiBaseUrl = read('API_BASE_URL', import.meta.env.VITE_API_BASE_URL, 'http://localhost:8000/api/v1');
 
+/**
+ * Swagger UI served by the backend. Derived from the API URL by default, so a
+ * single variable is usually enough; override it when the docs live elsewhere.
+ */
+function defaultDocsUrl(base: string): string {
+  try {
+    return `${new URL(base).origin}/api/documentation`;
+  } catch {
+    return '';
+  }
+}
+
 export const ENV_CONFIG = {
   apiBaseUrl,
+  /** Origin of the backend, without any path. */
+  backendUrl: (() => {
+    try {
+      return new URL(apiBaseUrl).origin;
+    } catch {
+      return '';
+    }
+  })(),
+  apiDocsUrl: read('API_DOCS_URL', import.meta.env.VITE_API_DOCS_URL, defaultDocsUrl(apiBaseUrl)),
   api: {
     baseUrl: apiBaseUrl,
     timeout: Number(read('API_TIMEOUT', import.meta.env.VITE_API_TIMEOUT, '30000')) || 30000,

@@ -1,259 +1,242 @@
 import type { IconButtonProps } from '@mui/material/IconButton';
+import type { AppNotification } from 'src/services/notification.service';
 
-import { useState, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
 import List from '@mui/material/List';
 import Badge from '@mui/material/Badge';
 import Button from '@mui/material/Button';
 import Avatar from '@mui/material/Avatar';
+import Popover from '@mui/material/Popover';
 import Divider from '@mui/material/Divider';
 import Tooltip from '@mui/material/Tooltip';
-import Popover from '@mui/material/Popover';
 import Typography from '@mui/material/Typography';
 import IconButton from '@mui/material/IconButton';
-import ListItemText from '@mui/material/ListItemText';
-import ListSubheader from '@mui/material/ListSubheader';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemButton from '@mui/material/ListItemButton';
+import CircularProgress from '@mui/material/CircularProgress';
 
-import { fToNow } from 'src/utils/format-time';
+import { notificationService } from 'src/services/notification.service';
 
 import { Iconify } from 'src/components/iconify';
-import { Scrollbar } from 'src/components/scrollbar';
 
 // ----------------------------------------------------------------------
 
-type NotificationItemProps = {
-  id: string;
-  type: string;
-  title: string;
-  isUnRead: boolean;
-  description: string;
-  avatarUrl: string | null;
-  postedAt: string | number | null;
-};
+/** How often the bell refreshes on its own. */
+const POLL_INTERVAL_MS = 60_000;
 
-export type NotificationsPopoverProps = IconButtonProps & {
-  data?: NotificationItemProps[];
-};
+const SEVERITY = {
+  error: { icon: 'solar:danger-triangle-bold', color: 'error.main', bg: 'error.lighter' },
+  warning: { icon: 'solar:bell-bing-bold-duotone', color: 'warning.main', bg: 'warning.lighter' },
+  info: { icon: 'solar:bell-bing-bold-duotone', color: 'info.main', bg: 'info.lighter' },
+} as const;
 
-export function NotificationsPopover({ data = [], sx, ...other }: NotificationsPopoverProps) {
-  const [notifications, setNotifications] = useState(data);
+function timeAgo(iso: string): string {
+  const seconds = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
 
-  const totalUnRead = notifications.filter((item) => item.isUnRead === true).length;
+  if (seconds < 60) return 'just now';
+  if (seconds < 3600) return `${Math.floor(seconds / 60)} min ago`;
+  if (seconds < 86400) return `${Math.floor(seconds / 3600)} h ago`;
 
-  const [openPopover, setOpenPopover] = useState<HTMLButtonElement | null>(null);
+  return `${Math.floor(seconds / 86400)} d ago`;
+}
 
-  const handleOpenPopover = useCallback((event: React.MouseEvent<HTMLButtonElement>) => {
-    setOpenPopover(event.currentTarget);
+export type NotificationsPopoverProps = IconButtonProps;
+
+/**
+ * Operational alerts: failed deliveries, undelivered webhooks, broken SMTP
+ * configurations. Derived from live state, so an entry disappears once the
+ * underlying problem ages out.
+ */
+export function NotificationsPopover({ sx, ...other }: NotificationsPopoverProps) {
+  const navigate = useNavigate();
+
+  const [anchor, setAnchor] = useState<HTMLButtonElement | null>(null);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [unread, setUnread] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const load = useCallback(async () => {
+    try {
+      const feed = await notificationService.getAll();
+      setNotifications(feed.notifications);
+      setUnread(feed.unread_count);
+    } catch {
+      // A transient API problem must not break the header.
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const handleClosePopover = useCallback(() => {
-    setOpenPopover(null);
-  }, []);
+  useEffect(() => {
+    load();
 
-  const handleMarkAllAsRead = useCallback(() => {
-    const updatedNotifications = notifications.map((notification) => ({
-      ...notification,
-      isUnRead: false,
-    }));
+    const timer = setInterval(load, POLL_INTERVAL_MS);
 
-    setNotifications(updatedNotifications);
-  }, [notifications]);
+    return () => clearInterval(timer);
+  }, [load]);
+
+  const handleMarkAllRead = useCallback(async () => {
+    setUnread(0);
+    setNotifications((previous) => previous.map((item) => ({ ...item, is_unread: false })));
+
+    try {
+      await notificationService.markAllRead();
+    } catch {
+      load();
+    }
+  }, [load]);
+
+  const handleOpenNotification = useCallback(
+    (notification: AppNotification) => {
+      setAnchor(null);
+
+      const link = notification.link;
+
+      if (!link) return;
+
+      if (link.view === 'messages') {
+        // The list highlights the message named in the query string.
+        navigate(`/messages?message_id=${link.message_id ?? ''}`);
+      } else if (link.view === 'business' && link.business_id) {
+        navigate(`/business/${link.business_id}${link.tab ? `?tab=${link.tab}` : ''}`);
+      }
+    },
+    [navigate]
+  );
 
   return (
     <>
       <IconButton
-        color={openPopover ? 'primary' : 'default'}
-        onClick={handleOpenPopover}
+        onClick={(event) => setAnchor(event.currentTarget)}
         sx={sx}
+        aria-label={`${unread} unread notifications`}
         {...other}
       >
-        <Badge badgeContent={totalUnRead} color="error">
+        <Badge badgeContent={unread} color="error" max={99}>
           <Iconify width={24} icon="solar:bell-bing-bold-duotone" />
         </Badge>
       </IconButton>
 
       <Popover
-        open={!!openPopover}
-        anchorEl={openPopover}
-        onClose={handleClosePopover}
+        open={!!anchor}
+        anchorEl={anchor}
+        onClose={() => setAnchor(null)}
         anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
         transformOrigin={{ vertical: 'top', horizontal: 'right' }}
-        slotProps={{
-          paper: {
-            sx: {
-              width: 360,
-              overflow: 'hidden',
-              display: 'flex',
-              flexDirection: 'column',
-            },
-          },
-        }}
+        slotProps={{ paper: { sx: { width: 380, maxWidth: '100%' } } }}
       >
-        <Box
-          sx={{
-            py: 2,
-            pl: 2.5,
-            pr: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
+        <Box sx={{ py: 2, pl: 2.5, pr: 1.5, display: 'flex', alignItems: 'center' }}>
           <Box sx={{ flexGrow: 1 }}>
             <Typography variant="subtitle1">Notifications</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-              You have {totalUnRead} unread messages
+              {unread > 0 ? `${unread} unread` : 'Nothing new'}
             </Typography>
           </Box>
 
-          {totalUnRead > 0 && (
-            <Tooltip title=" Mark all as read">
-              <IconButton color="primary" onClick={handleMarkAllAsRead}>
-                <Iconify icon="eva:done-all-fill" />
+          {unread > 0 && (
+            <Tooltip title="Mark all as read">
+              <IconButton color="primary" onClick={handleMarkAllRead}>
+                <Iconify icon="solar:check-circle-bold" />
               </IconButton>
             </Tooltip>
           )}
+
+          <Tooltip title="Refresh">
+            <IconButton onClick={load}>
+              <Iconify icon="solar:restart-bold" />
+            </IconButton>
+          </Tooltip>
         </Box>
 
         <Divider sx={{ borderStyle: 'dashed' }} />
 
-        <Scrollbar fillContent sx={{ minHeight: 240, maxHeight: { xs: 360, sm: 'none' } }}>
-          <List
-            disablePadding
-            subheader={
-              <ListSubheader disableSticky sx={{ py: 1, px: 2.5, typography: 'overline' }}>
-                New
-              </ListSubheader>
-            }
-          >
-            {notifications.slice(0, 2).map((notification) => (
-              <NotificationItem key={notification.id} notification={notification} />
-            ))}
-          </List>
+        {loading ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 5 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : notifications.length === 0 ? (
+          <Box sx={{ textAlign: 'center', py: 5, px: 3 }}>
+            <Iconify
+              icon="solar:check-circle-bold"
+              width={40}
+              sx={{ color: 'success.main', mb: 1 }}
+            />
+            <Typography variant="subtitle2">Everything is running</Typography>
+            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+              Failed deliveries and configuration problems show up here.
+            </Typography>
+          </Box>
+        ) : (
+          <List disablePadding sx={{ maxHeight: 420, overflowY: 'auto' }}>
+            {notifications.map((notification) => {
+              const severity = SEVERITY[notification.severity] ?? SEVERITY.info;
 
-          <List
-            disablePadding
-            subheader={
-              <ListSubheader disableSticky sx={{ py: 1, px: 2.5, typography: 'overline' }}>
-                Before that
-              </ListSubheader>
-            }
-          >
-            {notifications.slice(2, 5).map((notification) => (
-              <NotificationItem key={notification.id} notification={notification} />
-            ))}
+              return (
+                <ListItemButton
+                  key={notification.id}
+                  onClick={() => handleOpenNotification(notification)}
+                  sx={{
+                    py: 1.5,
+                    px: 2.5,
+                    alignItems: 'flex-start',
+                    gap: 2,
+                    ...(notification.is_unread && { bgcolor: 'action.selected' }),
+                  }}
+                >
+                  <Avatar sx={{ bgcolor: severity.bg, width: 40, height: 40 }}>
+                    <Iconify icon={severity.icon} width={22} sx={{ color: severity.color }} />
+                  </Avatar>
+
+                  <Box sx={{ minWidth: 0, flexGrow: 1 }}>
+                    <Typography variant="subtitle2" noWrap>
+                      {notification.title}
+                    </Typography>
+
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        color: 'text.secondary',
+                        display: '-webkit-box',
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: 'vertical',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      {notification.description}
+                    </Typography>
+
+                    <Typography
+                      variant="caption"
+                      sx={{ color: 'text.disabled', display: 'flex', gap: 0.75, mt: 0.5 }}
+                    >
+                      {timeAgo(notification.occurred_at)}
+                      {notification.business?.name ? ` · ${notification.business.name}` : ''}
+                    </Typography>
+                  </Box>
+                </ListItemButton>
+              );
+            })}
           </List>
-        </Scrollbar>
+        )}
 
         <Divider sx={{ borderStyle: 'dashed' }} />
 
         <Box sx={{ p: 1 }}>
-          <Button fullWidth disableRipple color="inherit">
-            View all
+          <Button
+            fullWidth
+            disableRipple
+            color="inherit"
+            onClick={() => {
+              setAnchor(null);
+              navigate('/messages?status=failed');
+            }}
+          >
+            View all failed messages
           </Button>
         </Box>
       </Popover>
     </>
   );
-}
-
-// ----------------------------------------------------------------------
-
-function NotificationItem({ notification }: { notification: NotificationItemProps }) {
-  const { avatarUrl, title } = renderContent(notification);
-
-  return (
-    <ListItemButton
-      sx={{
-        py: 1.5,
-        px: 2.5,
-        mt: '1px',
-        ...(notification.isUnRead && {
-          bgcolor: 'action.selected',
-        }),
-      }}
-    >
-      <ListItemAvatar>
-        <Avatar sx={{ bgcolor: 'background.neutral' }}>{avatarUrl}</Avatar>
-      </ListItemAvatar>
-      <ListItemText
-        primary={title}
-        secondary={
-          <Typography
-            variant="caption"
-            sx={{
-              mt: 0.5,
-              gap: 0.5,
-              display: 'flex',
-              alignItems: 'center',
-              color: 'text.disabled',
-            }}
-          >
-            <Iconify width={14} icon="solar:clock-circle-outline" />
-            {fToNow(notification.postedAt)}
-          </Typography>
-        }
-      />
-    </ListItemButton>
-  );
-}
-
-// ----------------------------------------------------------------------
-
-function renderContent(notification: NotificationItemProps) {
-  const title = (
-    <Typography variant="subtitle2">
-      {notification.title}
-      <Typography component="span" variant="body2" sx={{ color: 'text.secondary' }}>
-        &nbsp; {notification.description}
-      </Typography>
-    </Typography>
-  );
-
-  if (notification.type === 'order-placed') {
-    return {
-      avatarUrl: (
-        <img
-          alt={notification.title}
-          src="/assets/icons/notification/ic-notification-package.svg"
-        />
-      ),
-      title,
-    };
-  }
-  if (notification.type === 'order-shipped') {
-    return {
-      avatarUrl: (
-        <img
-          alt={notification.title}
-          src="/assets/icons/notification/ic-notification-shipping.svg"
-        />
-      ),
-      title,
-    };
-  }
-  if (notification.type === 'mail') {
-    return {
-      avatarUrl: (
-        <img alt={notification.title} src="/assets/icons/notification/ic-notification-mail.svg" />
-      ),
-      title,
-    };
-  }
-  if (notification.type === 'chat-message') {
-    return {
-      avatarUrl: (
-        <img alt={notification.title} src="/assets/icons/notification/ic-notification-chat.svg" />
-      ),
-      title,
-    };
-  }
-  return {
-    avatarUrl: notification.avatarUrl ? (
-      <img alt={notification.title} src={notification.avatarUrl} />
-    ) : null,
-    title,
-  };
 }

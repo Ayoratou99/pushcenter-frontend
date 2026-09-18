@@ -1,3 +1,4 @@
+import { useSearchParams } from 'react-router-dom';
 import { useState, useEffect, useCallback } from 'react';
 
 import Box from '@mui/material/Box';
@@ -18,6 +19,8 @@ import TableSortLabel from '@mui/material/TableSortLabel';
 import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 
+import { useLatestRequest } from 'src/hooks/use-latest-request';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
   type Message,
@@ -28,11 +31,18 @@ import {
   whatsappTemplateService,
 } from 'src/services';
 
+import { Iconify } from 'src/components/iconify';
 import { TableFilters } from 'src/components/table-filters';
+
+import { MessageDetailDialog } from '../message-detail-dialog';
 
 // ----------------------------------------------------------------------
 
-type MessageRow = Message & {
+export type MessageRow = Message & {
+  webhook_status?: 'not_applicable' | 'pending' | 'delivered' | 'failed';
+  webhook_error?: string | null;
+  webhook_attempts?: number;
+  webhook_last_attempt_at?: string | null;
   business?: { id: number; name: string };
   email_message?: { recipient_email?: string; subject?: string; template_id?: number | null };
   sms_message?: { recipient_number?: string; template_id?: number | null };
@@ -84,6 +94,30 @@ export function MessagesView() {
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
   const [filters, setFilters] = useState<Record<string, string>>(EMPTY_FILTERS);
   const [error, setError] = useState('');
+  const [detail, setDetail] = useState<MessageRow | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { start, isCurrent } = useLatestRequest();
+
+  // Opened from a notification: pre-fill the filters, and open the message it
+  // points at as soon as it comes back.
+  useEffect(() => {
+    const messageId = searchParams.get('message_id');
+    const status = searchParams.get('status');
+
+    if (!messageId && !status) {
+      return;
+    }
+
+    setFilters((previous) => ({
+      ...previous,
+      ...(messageId ? { search: messageId } : {}),
+      ...(status ? { status } : {}),
+    }));
+    setPage(0);
+    setSearchParams({}, { replace: true });
+    // Intentionally reads the query string once, on arrival.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     businessService
@@ -113,6 +147,7 @@ export function MessagesView() {
   }, []);
 
   const loadMessages = useCallback(async () => {
+    const token = start();
     setLoading(true);
     setError('');
 
@@ -129,14 +164,19 @@ export function MessagesView() {
       });
 
       const response = await messageService.getAll(params);
+
+      // A newer request already took over; its answer is the current one.
+      if (!isCurrent(token)) return;
+
       setMessages(response.data.data as MessageRow[]);
       setTotal(response.data.total);
     } catch (err: any) {
+      if (!isCurrent(token)) return;
       setError(err?.response?.data?.message || 'Could not load messages');
     } finally {
-      setLoading(false);
+      if (isCurrent(token)) setLoading(false);
     }
-  }, [page, rowsPerPage, sortBy, sortDir, filters]);
+  }, [page, rowsPerPage, sortBy, sortDir, filters, start, isCurrent]);
 
   useEffect(() => {
     loadMessages();
@@ -326,7 +366,12 @@ export function MessagesView() {
                 </TableRow>
               ) : (
                 messages.map((row) => (
-                  <TableRow key={row.id} hover>
+                  <TableRow
+                    key={row.id}
+                    hover
+                    onClick={() => setDetail(row)}
+                    sx={{ cursor: 'pointer' }}
+                  >
                     <TableCell>
                       <Typography variant="caption" sx={{ fontFamily: 'monospace' }}>
                         {row.message_id}
@@ -349,8 +394,12 @@ export function MessagesView() {
                           color={STATUS_COLOR[row.status] ?? 'default'}
                         />
                         {row.error_message && (
-                          <Tooltip title={row.error_message}>
-                            <Chip size="small" color="error" variant="outlined" label="!" />
+                          <Tooltip title={`${row.error_message} — click the row for the full detail`}>
+                            <Iconify
+                              icon="solar:danger-triangle-bold"
+                              width={18}
+                              sx={{ color: 'error.main' }}
+                            />
                           </Tooltip>
                         )}
                       </Stack>
@@ -378,6 +427,8 @@ export function MessagesView() {
           }}
         />
       </Card>
+
+      <MessageDetailDialog message={detail} onClose={() => setDetail(null)} />
 
       <Snackbar
         open={!!error}

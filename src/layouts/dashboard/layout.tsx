@@ -10,8 +10,6 @@ import { useTheme } from '@mui/material/styles';
 
 import { useAuth } from 'src/hooks/useAuth';
 
-import { _notifications } from 'src/_mock';
-
 import { NavMobile, NavDesktop } from './nav';
 import { layoutClasses } from '../core/classes';
 import { _account } from '../nav-config-account';
@@ -85,7 +83,7 @@ export function DashboardLayout({
       rightArea: (
         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.75 } }}>
           {/** @slot Notifications popover */}
-          <NotificationsPopover data={_notifications} />
+          <NotificationsPopover />
 
           {/** @slot Account drawer */}
           <AccountPopover data={_account} />

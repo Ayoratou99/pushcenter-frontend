@@ -26,6 +26,7 @@ export const BusinessesPage = lazy(() => import('src/pages/businesses'));
 export const BusinessDetailPage = lazy(() => import('src/pages/business-detail'));
 export const UsersPage = lazy(() => import('src/pages/users'));
 export const ProfilePage = lazy(() => import('src/pages/profile'));
+export const DocumentationPage = lazy(() => import('src/pages/documentation'));
 export const SignInPage = lazy(() => import('src/pages/sign-in'));
 export const TwoFactorSetupPage = lazy(() => import('src/pages/two-factor-setup'));
 export const FacebookCallbackPage = lazy(() => import('src/pages/facebook-callback'));
@@ -141,6 +142,7 @@ export const routesSection: RouteObject[] = [
       { path: 'businesses', element: <BusinessesPage /> },
       { path: 'business/:id', element: <BusinessDetailPage /> },
       { path: 'profile', element: <ProfilePage /> },
+      { path: 'documentation', element: <DocumentationPage /> },
       {
         path: 'users',
         element: (

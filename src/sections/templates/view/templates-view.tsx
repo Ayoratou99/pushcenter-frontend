@@ -32,6 +32,8 @@ import TablePagination from '@mui/material/TablePagination';
 import CircularProgress from '@mui/material/CircularProgress';
 import DialogContentText from '@mui/material/DialogContentText';
 
+import { useLatestRequest } from 'src/hooks/use-latest-request';
+
 import { DashboardContent } from 'src/layouts/dashboard';
 import {
   businessService,
@@ -100,6 +102,7 @@ const TYPE_COLOR: Record<string, 'primary' | 'secondary' | 'success' | 'default'
 
 export function TemplatesView() {
   const navigate = useNavigate();
+  const { start, isCurrent } = useLatestRequest();
 
   const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [businesses, setBusinesses] = useState<{ id: number; name: string }[]>([]);
@@ -126,6 +129,7 @@ export function TemplatesView() {
   }, []);
 
   const loadTemplates = useCallback(async () => {
+    const token = start();
     setLoading(true);
 
     const shared: Record<string, any> = {
@@ -159,17 +163,21 @@ export function TemplatesView() {
         })
       );
 
+      // A newer request already took over; its answer is the current one.
+      if (!isCurrent(token)) return;
+
       const rows = responses.flatMap((response) => response.rows) as TemplateRow[];
       rows.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setTemplates(rows);
       setTotal(responses.reduce((sum, response) => sum + response.total, 0));
     } catch (err: any) {
+      if (!isCurrent(token)) return;
       setToast({ message: err?.response?.data?.message || 'Could not load templates', severity: 'error' });
     } finally {
-      setLoading(false);
+      if (isCurrent(token)) setLoading(false);
     }
-  }, [page, rowsPerPage, sortBy, sortDir, filters]);
+  }, [page, rowsPerPage, sortBy, sortDir, filters, start, isCurrent]);
 
   useEffect(() => {
     loadTemplates();

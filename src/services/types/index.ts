@@ -24,6 +24,9 @@ export interface Business {
   postal_code?: string;
   country?: string;
   verification_status?: 'pending' | 'verified' | 'rejected';
+  /** Delivery notifications pushed back to the application. */
+  webhook_url?: string | null;
+  webhook_events?: string[] | null;
   created_at: string;
   updated_at: string;
 }

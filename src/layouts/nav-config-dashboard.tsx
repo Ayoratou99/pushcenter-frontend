@@ -33,6 +33,11 @@ export const navData: NavItem[] = [
     icon: <Iconify icon="solar:shop-bold" width={24} />,
   },
   {
+    title: 'API docs',
+    path: '/documentation',
+    icon: <Iconify icon="solar:book-bookmark-bold" width={24} />,
+  },
+  {
     title: 'Users',
     path: '/users',
     icon: <Iconify icon="solar:users-group-rounded-bold" width={24} />,

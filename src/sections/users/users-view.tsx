@@ -28,6 +28,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import DialogContentText from '@mui/material/DialogContentText';
 
 import { useAuth } from 'src/hooks/useAuth';
+import { useLatestRequest } from 'src/hooks/use-latest-request';
 
 import { userService } from 'src/services/user.service';
 import { DashboardContent } from 'src/layouts/dashboard';
@@ -54,6 +55,7 @@ const EMPTY_FILTERS = {
 
 export function UsersView() {
   const { user: currentUser } = useAuth();
+  const { start, isCurrent } = useLatestRequest();
 
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [businesses, setBusinesses] = useState<BusinessOption[]>([]);
@@ -72,6 +74,7 @@ export function UsersView() {
   const [toast, setToast] = useState<{ message: string; severity: 'success' | 'error' } | null>(null);
 
   const loadUsers = useCallback(async () => {
+    const token = start();
     setLoading(true);
 
     try {
@@ -83,14 +86,18 @@ export function UsersView() {
         ...(Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== '')) as any),
       });
 
+      // A newer request already took over; its answer is the current one.
+      if (!isCurrent(token)) return;
+
       setUsers(response.data.data);
       setTotal(response.data.total);
     } catch (err: any) {
+      if (!isCurrent(token)) return;
       setToast({ message: err?.response?.data?.message || 'Could not load users', severity: 'error' });
     } finally {
-      setLoading(false);
+      if (isCurrent(token)) setLoading(false);
     }
-  }, [page, rowsPerPage, sortBy, sortDir, filters]);
+  }, [page, rowsPerPage, sortBy, sortDir, filters, start, isCurrent]);
 
   useEffect(() => {
     userService.businessOptions().then(setBusinesses).catch(() => setBusinesses([]));

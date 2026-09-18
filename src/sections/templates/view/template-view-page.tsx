@@ -129,7 +129,7 @@ export function TemplateViewPage() {
         <Button
           variant="contained"
           startIcon={<Iconify icon="solar:pen-bold" />}
-          onClick={() => navigate(`/templates/${id}/edit`)}
+          onClick={() => navigate(`/templates/${type}/${id}/edit`)}
         >
           Edit
         </Button>

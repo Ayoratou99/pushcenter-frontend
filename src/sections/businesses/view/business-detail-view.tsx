@@ -31,6 +31,7 @@ import { Iconify } from 'src/components/iconify';
 
 import { SmsSettingsTab } from '../settings/sms-settings-tab';
 import { EmailSettingsTab } from '../settings/email-settings-tab';
+import { WebhookSettingsTab } from '../settings/webhook-settings-tab';
 import { FacebookSettingsTab } from '../settings/facebook-settings-tab';
 
 // ----------------------------------------------------------------------
@@ -262,6 +263,12 @@ export function BusinessDetailView() {
             icon={<Iconify icon="solar:chat-round-call-bold" width={20} />}
             iconPosition="start"
           />
+          <Tab
+            value="webhook"
+            label="Webhooks"
+            icon={<Iconify icon="solar:link-bold" width={20} />}
+            iconPosition="start"
+          />
         </Tabs>
 
         <Box sx={{ p: 3 }}>
@@ -435,6 +442,7 @@ export function BusinessDetailView() {
           {currentTab === 'email' && <EmailSettingsTab businessId={Number(id)} />}
           {currentTab === 'sms' && <SmsSettingsTab businessId={Number(id)} />}
           {currentTab === 'facebook' && <FacebookSettingsTab businessId={Number(id)} />}
+          {currentTab === 'webhook' && <WebhookSettingsTab businessId={Number(id)} />}
         </Box>
       </Card>
 

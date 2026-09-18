@@ -238,7 +238,7 @@ export function TemplateEditPage() {
       <Box display="flex" alignItems="center" mb={3}>
         <Button
           startIcon={<Iconify icon="solar:arrow-left-outline" />}
-          onClick={() => navigate(`/templates/${id}/view`)}
+          onClick={() => navigate(`/templates/${type}/${id}/view`)}
           sx={{ mr: 2 }}
         >
           Back
