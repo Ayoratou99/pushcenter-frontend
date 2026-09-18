@@ -5,7 +5,6 @@ import { merge } from 'es-toolkit';
 import { useBoolean } from 'minimal-shared/hooks';
 
 import Box from '@mui/material/Box';
-import Alert from '@mui/material/Alert';
 import { useTheme } from '@mui/material/styles';
 
 import { useAuth } from 'src/hooks/useAuth';
@@ -19,6 +18,7 @@ import { MainSection } from '../core/main-section';
 import { MenuButton } from '../components/menu-button';
 import { HeaderSection } from '../core/header-section';
 import { LayoutSection } from '../core/layout-section';
+import { HorizonBanner } from '../components/horizon-banner';
 import { AccountPopover } from '../components/account-popover';
 import { NotificationsPopover } from '../components/notifications-popover';
 
@@ -65,11 +65,7 @@ export function DashboardLayout({
     };
 
     const headerSlots: HeaderSectionProps['slots'] = {
-      topArea: (
-        <Alert severity="info" sx={{ display: 'none', borderRadius: 0 }}>
-          This is an info Alert.
-        </Alert>
-      ),
+      topArea: <HorizonBanner />,
       leftArea: (
         <>
           {/** @slot Nav mobile */}

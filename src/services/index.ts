@@ -1,6 +1,7 @@
 export * from './types';
 export * from './auth.service';
 export * from './user.service';
+export * from './system.service';
 export * from './message.service';
 export * from './business.service';
 export * from './template.service';
@@ -13,6 +14,7 @@ export * from './template-transfer.service';
 
 export { authService } from './auth.service';
 export { userService } from './user.service';
+export { systemService } from './system.service';
 export { messageService } from './message.service';
 export { businessService } from './business.service';
 export { templateService } from './template.service';

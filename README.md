@@ -10,6 +10,7 @@ Management console for the AninfPush multi-channel messaging API (Email, SMS, Wh
 - 🏢 **Applications** — manage businesses; the API key and secret are generated automatically on creation
 - 👥 **Users** — internal user management, with managers assigned globally or to specific applications (admin only)
 - 🔔 **Live notifications** — failed deliveries, undelivered webhooks and broken SMTP configurations, straight in the header
+- 🩺 **Queue health banner** — warns when the worker is stopped, paused or falling behind, because nothing goes out without it
 - 📚 **API documentation** — the backend's Swagger UI embedded in the sidebar
 - 🔐 **Internal authentication** — JWT access tokens with rotating refresh tokens, and mandatory Google Authenticator
 - 🎨 Material-UI v7, React 19, Vite
